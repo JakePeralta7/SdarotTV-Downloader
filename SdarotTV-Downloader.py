@@ -36,6 +36,7 @@ def main():
     # Getting the credentials from the user
     username = input("Username: ")
     password = getpass.getpass("Password: ")
+    show_id = input("Enter the Show ID: ")
 
     # Initializing and configuring the chrome driver
     driver = get_driver()
@@ -46,8 +47,6 @@ def main():
     driver.execute_script(f"document.getElementsByName('password')[1].setAttribute('value', '{password}')")
     driver.execute_script("document.getElementsByName('submit_login')[1].click()")
 
-
-    show_id = input("Enter the Show ID: ")
     driver.get(f"{WATCH_URL}/{show_id}")
 
     # Retrieving the show's seasons
