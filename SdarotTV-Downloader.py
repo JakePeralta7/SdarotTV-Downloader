@@ -23,6 +23,35 @@ def get_video_url(browser_log):
     return media_request['params']['request']['url']
 
 
+def download_episode(driver, show_id, season, episode):
+
+    # Entering the episode page
+    driver.get(f"{WATCH_URL}/{show_id}/season/{season}/episode/{episode}")
+
+    # Waiting for the button to be clickable
+    wait = WebDriverWait(driver, 35)
+    wait.until(EC.element_to_be_clickable((By.ID, 'proceed')))
+
+    # Catching the video request from the network logs
+    browser_log = driver.get_log('performance')
+    media_url = get_video_url(browser_log)
+
+    # Moving the cookies from selenium to requests
+    cookies = driver.get_cookies()
+    s = requests.Session()
+    for cookie in cookies:
+        s.cookies.set(cookie['name'], cookie['value'])
+
+    # Downloading the video
+    response = s.get(media_url, stream=True)
+
+    file_name = f"SE{season.zfill(2)} EP{episode.zfill(2)}.mp4"
+
+    # Saving the video to file
+    with open(file_name, 'wb') as f:
+        f.write(response.content)
+
+
 def get_driver():
     caps = DesiredCapabilities.CHROME
     caps['goog:loggingPrefs'] = {'performance': 'ALL'}
@@ -72,34 +101,13 @@ def main():
                 continue
             print(f"Downloading Episode {episode}")
 
-            # Entering the episode page
-            driver.get(f"{WATCH_URL}/{show_id}/season/{season}/episode/{episode}")
-
-            try:
-                # Waiting for the button to be clickable
-                wait = WebDriverWait(driver, 35)
-                wait.until(EC.element_to_be_clickable((By.ID, 'proceed')))
-            except TimeoutException:
-                continue
-
-            # Catching the video request from the network logs
-            browser_log = driver.get_log('performance') 
-            media_url = get_video_url(browser_log)
-
-            # Moving the cookies from selenium to requests
-            cookies = driver.get_cookies()
-            s = requests.Session()
-            for cookie in cookies:
-                s.cookies.set(cookie['name'], cookie['value'])
-            
-            # Downloading the video
-            response = s.get(media_url, stream=True)
-
-            file_name = f"SE{season.zfill(2)} EP{episode.zfill(2)}.mp4"
-
-            # Saving the video to file
-            with open(file_name,'wb') as f:
-                f.write(response.content)
+            downloaded = False
+            while not downloaded:
+                try:
+                    download_episode(driver, show_id, season, episode)
+                    downloaded = True
+                except TimeoutException:
+                    continue
 
 
 if __name__ == "__main__":
