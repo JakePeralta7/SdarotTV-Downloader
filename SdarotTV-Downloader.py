@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.common.exceptions import TimeoutException
 
 # Constants
 BASE_URL = "https://www.sdarot.tw"
@@ -37,6 +38,9 @@ def main():
     username = input("Username: ")
     password = getpass.getpass("Password: ")
     show_id = input("Enter the Show ID: ")
+    print("Enter Starting Point")
+    season_start = int(input("Season: "))
+    episode_start = int(input("Episode: "))
 
     # Initializing and configuring the chrome driver
     driver = get_driver()
@@ -52,6 +56,9 @@ def main():
     # Retrieving the show's seasons
     seasons = [season.text for season in driver.find_element(By.ID, "season").find_elements(By.TAG_NAME, "li")]
     for season in seasons:
+        if int(season) < season_start:
+            print(f"Skipping Season {season}...")
+            continue
         print(f"Downloading Season {season}...")
 
         # Entering the season page
@@ -60,14 +67,20 @@ def main():
         # Retrieving the season's episodes
         episodes = [episode.text for episode in driver.find_element(By.ID, "episode").find_elements(By.TAG_NAME, "li")]
         for episode in episodes:
+            if int(season) == season_start and int(episode) < episode_start:
+                print(f"Skipping Episode {episode}")
+                continue
             print(f"Downloading Episode {episode}")
 
             # Entering the episode page
             driver.get(f"{WATCH_URL}/{show_id}/season/{season}/episode/{episode}")
 
-            # Waiting for the button to be clickable
-            wait = WebDriverWait(driver, 35)
-            element = wait.until(EC.element_to_be_clickable((By.ID, 'proceed')))
+            try:
+                # Waiting for the button to be clickable
+                wait = WebDriverWait(driver, 35)
+                wait.until(EC.element_to_be_clickable((By.ID, 'proceed')))
+            except TimeoutException:
+                continue
 
             # Catching the video request from the network logs
             browser_log = driver.get_log('performance') 
