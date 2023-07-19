@@ -9,14 +9,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common.exceptions import TimeoutException
 
-# Constants
-BASE_URL = "https://www.sdarot.tw"
-WATCH_URL = f"{BASE_URL}/watch"
-LOGIN_URL = f"{BASE_URL}/login"
 
-
-def load_config():
-    pass
+with open("config.json", "r") as config_file:
+    config = json.loads(config_file.read())
+site_dns = config["site_dns"] if "site_dns" in config.keys() else "sdarot.tw"
+watch_url = f"https://{site_dns}/watch"
+login_url = f"https://{site_dns}/login"
 
 
 def get_video_url(browser_log):
@@ -30,7 +28,7 @@ def get_video_url(browser_log):
 def download_episode(driver, show_id, season, episode):
 
     # Entering the episode page
-    driver.get(f"{WATCH_URL}/{show_id}/season/{season}/episode/{episode}")
+    driver.get(f"{watch_url}/{show_id}/season/{season}/episode/{episode}")
 
     # Waiting for the button to be clickable
     wait = WebDriverWait(driver, 60)
@@ -79,12 +77,12 @@ def main():
     driver = get_driver()
 
     # Logging in to the website via the JS console
-    driver.get(LOGIN_URL)
+    driver.get(login_url)
     driver.execute_script(f"document.getElementsByName('username')[1].setAttribute('value', '{username}')")
     driver.execute_script(f"document.getElementsByName('password')[1].setAttribute('value', '{password}')")
     driver.execute_script("document.getElementsByName('submit_login')[1].click()")
 
-    driver.get(f"{WATCH_URL}/{show_id}")
+    driver.get(f"{watch_url}/{show_id}")
 
     # Retrieving the show's seasons
     seasons = [season.text for season in driver.find_element(By.ID, "season").find_elements(By.TAG_NAME, "li")]
@@ -95,7 +93,7 @@ def main():
         print(f"Downloading Season {season}...")
 
         # Entering the season page
-        driver.get(f"{WATCH_URL}/{show_id}/season/{season}")
+        driver.get(f"{watch_url}/{show_id}/season/{season}")
 
         # Retrieving the season's episodes
         episodes = [episode.text for episode in driver.find_element(By.ID, "episode").find_elements(By.TAG_NAME, "li")]
