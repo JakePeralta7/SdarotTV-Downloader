@@ -15,6 +15,10 @@ WATCH_URL = f"{BASE_URL}/watch"
 LOGIN_URL = f"{BASE_URL}/login"
 
 
+def load_config():
+    pass
+
+
 def get_video_url(browser_log):
     events = [json.loads(entry['message'])['message'] for entry in browser_log]
 
@@ -29,7 +33,7 @@ def download_episode(driver, show_id, season, episode):
     driver.get(f"{WATCH_URL}/{show_id}/season/{season}/episode/{episode}")
 
     # Waiting for the button to be clickable
-    wait = WebDriverWait(driver, 35)
+    wait = WebDriverWait(driver, 60)
     wait.until(EC.element_to_be_clickable((By.ID, 'proceed')))
 
     # Catching the video request from the network logs
